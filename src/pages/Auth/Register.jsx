@@ -4,7 +4,7 @@ import useAuth from "../../hooks/useAuth";
 import toast from "react-hot-toast";
 import { TbFidgetSpinner } from "react-icons/tb";
 
-const SignUp = () => {
+const Register = () => {
     const { registerUser, updateUserProfile, signInGoogle, loading } = useAuth()
 
     const navigate = useNavigate();
@@ -169,4 +169,4 @@ const SignUp = () => {
     );
 };
 
-export default SignUp;
+export default Register;

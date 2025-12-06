@@ -37,8 +37,21 @@ const AuthProvider = ({ children }) => {
         return signOut(auth);
     };
 
-    const updateUserProfile = (profile) => {
-        return updateProfile(auth.currentUser, profile);
+    const updateUserProfile = (name, photoURL) => {
+        setLoading(true);
+        return updateProfile(auth.currentUser, {
+            displayName: name,
+            photoURL: photoURL,
+        })
+            .then(() => {
+                setUser((prev) => {
+                    if (!prev) return prev;
+                    return { ...prev, displayName: name, photoURL };
+                });
+            })
+            .finally(() => {
+                setLoading(false);
+            });
     };
 
     useEffect(() => {
@@ -61,6 +74,7 @@ const AuthProvider = ({ children }) => {
         signInGoogle,
         logOut,
         updateUserProfile,
+        setLoading,
     };
 
     return (
