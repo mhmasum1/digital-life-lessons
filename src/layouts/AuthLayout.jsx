@@ -3,11 +3,13 @@ import { Link } from "react-router-dom";
 
 const AuthLayout = () => {
     return (
-        <div className="min-h-screen flex items-center justify-center bg-base-200 px-4">
-            <div className="w-full max-w-md bg-base-100 shadow-xl rounded-xl p-6 md:p-8">
-                <Link to="/" className="block mb-4 text-center font-bold text-xl">
-                    Life Lessons Lab
+        <div className="flex items-center justify-center bg-base-200 px-4">
+            <div className="w-full  bg-base-100 shadow-xl rounded-xl ">
+
+                <Link to="/" className=" block text-center font-bold text-2xl pt-5 ">
+                    Digital Life Lessons
                 </Link>
+
                 <Outlet />
             </div>
         </div>
