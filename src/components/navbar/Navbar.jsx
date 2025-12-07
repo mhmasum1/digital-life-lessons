@@ -80,9 +80,6 @@ const Navbar = () => {
                                 <span className="font-semibold text-base text-gray-900">
                                     Digital Life Lessons
                                 </span>
-                                <span className="text-xs text-gray-500">
-                                    Learn from real stories
-                                </span>
                             </div>
                         </Link>
                     </div>
