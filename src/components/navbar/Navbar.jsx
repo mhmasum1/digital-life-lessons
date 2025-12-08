@@ -1,19 +1,27 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
+import useUserInfo from "../../hooks/useUserInfo";
+
 import "../navbar/navbar.css";
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const { user, logOut } = useAuth() || {};
+    const { dbUser } = useUserInfo();
     const dropdownRef = useRef(null);
+
+    const isPremium = dbUser?.isPremium === true;
+    const navigate = useNavigate();
+
 
     const handleLogout = async () => {
         try {
             await logOut();
             setDropdownOpen(false);
             setIsOpen(false);
+            navigate("/", { replace: true });
         } catch (error) {
             console.error("Logout failed:", error);
         }
@@ -21,10 +29,7 @@ const Navbar = () => {
 
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (
-                dropdownRef.current &&
-                !dropdownRef.current.contains(event.target)
-            ) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setDropdownOpen(false);
             }
         };
@@ -52,11 +57,23 @@ const Navbar = () => {
                     Lessons
                 </NavLink>
             </li>
-            <li>
-                <NavLink to="/pricing" className="nav-link">
-                    Pricing
-                </NavLink>
-            </li>
+
+            {user?.email && !isPremium && (
+                <li>
+                    <NavLink to="/pricing" className="nav-link">
+                        Pricing
+                    </NavLink>
+                </li>
+            )}
+
+            {user?.email && isPremium && (
+                <li>
+                    <span className="nav-link text-amber-600 font-semibold">
+                        Premium ⭐
+                    </span>
+                </li>
+            )}
+
             {user?.email && (
                 <li>
                     <NavLink to="/dashboard" className="nav-link">
@@ -176,10 +193,7 @@ const Navbar = () => {
                                 />
                             ) : (
                                 <div className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-semibold">
-                                    {(user.displayName?.[0] ||
-                                        user.email?.[0] ||
-                                        "U"
-                                    ).toUpperCase()}
+                                    {(user.displayName?.[0] || user.email?.[0] || "U").toUpperCase()}
                                 </div>
                             ))}
                         <button
