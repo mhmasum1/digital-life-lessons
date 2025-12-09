@@ -9,7 +9,7 @@ const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const { user, logOut } = useAuth() || {};
-    const { dbUser } = useUserInfo();
+    const { dbUser, loadingUser } = useUserInfo();
     const dropdownRef = useRef(null);
 
     const isPremium = dbUser?.isPremium === true;
@@ -58,7 +58,7 @@ const Navbar = () => {
                 </NavLink>
             </li>
 
-            {user?.email && !isPremium && (
+            {user?.email && !loadingUser && !isPremium && (
                 <li>
                     <NavLink to="/pricing" className="nav-link">
                         Pricing
@@ -66,7 +66,7 @@ const Navbar = () => {
                 </li>
             )}
 
-            {user?.email && isPremium && (
+            {user?.email && !loadingUser && isPremium && (
                 <li>
                     <span className="nav-link text-amber-600 font-semibold">
                         Premium ⭐
