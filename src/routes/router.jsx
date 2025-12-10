@@ -1,4 +1,4 @@
-
+// src/routes/router.jsx
 import { createBrowserRouter } from "react-router-dom";
 import RootLayout from "../layouts/RootLayout";
 import DashboardLayout from "../layouts/DashboardLayout";
@@ -16,6 +16,7 @@ import Register from "../pages/Auth/Register";
 
 import AddLesson from "../pages/Lessons/AddLesson";
 import UpdateLesson from "../pages/Lessons/UpdateLesson";
+import MyLesson from "../pages/Lessons/MyLesson";
 
 import MyFavorites from "../pages/Favorites/MyFavorites";
 
@@ -23,10 +24,8 @@ import Pricing from "../pages/Pricing/Pricing";
 import PaymentSuccess from "../pages/Payment/PaymentSuccess";
 import PaymentCancel from "../pages/Payment/PaymentCancel";
 
-
 import NotFound from "../pages/Error/NotFound";
 import AccessDenied from "../pages/Error/AccessDenied";
-import MyLesson from "../pages/Lessons/MyLesson";
 import UserHome from "../pages/Dashborad/UserHome";
 import AdminHome from "../pages/Dashborad/AdminHome";
 import ManageUsers from "../pages/Dashborad/ManageUsers";
@@ -34,39 +33,43 @@ import ManageLessons from "../pages/Dashborad/ManageLessons";
 import ReportedLessons from "../pages/Dashborad/ReportedLessons";
 
 const router = createBrowserRouter([
+    // ---------- Public / main layout ----------
     {
         path: "/",
         element: <RootLayout />,
         errorElement: <NotFound />,
         children: [
-            { path: "/", element: <Home /> },
-            { path: "/lessons", element: <PublicLessons /> },
+            { index: true, element: <Home /> },
+            { path: "lessons", element: <PublicLessons /> },
+
+            // ✅ Details route – MUST match /lessons/:id
             {
-                path: "/lesson/:id",
+                path: "lessons/:id",
                 element: (
                     <PrivateRoute>
                         <LessonDetails />
                     </PrivateRoute>
                 ),
             },
-            { path: "/pricing", element: <Pricing /> },
-            { path: "/payment/success", element: <PaymentSuccess /> },
-            { path: "/payment/cancel", element: <PaymentCancel /> },
-            { path: "/access-denied", element: <AccessDenied /> },
+
+            { path: "pricing", element: <Pricing /> },
+            { path: "payment/success", element: <PaymentSuccess /> },
+            { path: "payment/cancel", element: <PaymentCancel /> },
+            { path: "access-denied", element: <AccessDenied /> },
         ],
     },
 
-    // Auth Routes
+    // ---------- Auth routes ----------
     {
         path: "/auth",
         element: <AuthLayout />,
         children: [
-            { path: "/auth/login", element: <Login /> },
-            { path: "/auth/register", element: <Register /> },
+            { path: "login", element: <Login /> },
+            { path: "register", element: <Register /> },
         ],
     },
 
-    // Dashboard Routes
+    // ---------- Dashboard routes ----------
     {
         path: "/dashboard",
         element: (
@@ -75,16 +78,16 @@ const router = createBrowserRouter([
             </PrivateRoute>
         ),
         children: [
-            // User side
-            { path: "/dashboard", element: < UserHome /> },
-            { path: "/dashboard/add-lesson", element: <AddLesson /> },
-            { path: "/dashboard/my-lessons", element: <MyLesson /> },
-            { path: "/dashboard/update-lesson/:id", element: <UpdateLesson /> },
-            { path: "/dashboard/my-favorites", element: <MyFavorites /> },
+            // user side
+            { index: true, element: <UserHome /> },
+            { path: "add-lesson", element: <AddLesson /> },
+            { path: "my-lessons", element: <MyLesson /> },
+            { path: "update-lesson/:id", element: <UpdateLesson /> },
+            { path: "my-favorites", element: <MyFavorites /> },
 
-            // Admin side
+            // admin side
             {
-                path: "/dashboard/admin",
+                path: "admin",
                 element: (
                     <AdminRoute>
                         <AdminHome />
@@ -92,7 +95,7 @@ const router = createBrowserRouter([
                 ),
             },
             {
-                path: "/dashboard/manage-users",
+                path: "manage-users",
                 element: (
                     <AdminRoute>
                         <ManageUsers />
@@ -100,7 +103,7 @@ const router = createBrowserRouter([
                 ),
             },
             {
-                path: "/dashboard/manage-lessons",
+                path: "manage-lessons",
                 element: (
                     <AdminRoute>
                         <ManageLessons />
@@ -108,7 +111,7 @@ const router = createBrowserRouter([
                 ),
             },
             {
-                path: "/dashboard/reported-lessons",
+                path: "reported-lessons",
                 element: (
                     <AdminRoute>
                         <ReportedLessons />

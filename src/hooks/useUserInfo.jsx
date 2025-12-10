@@ -7,29 +7,43 @@ const useUserInfo = () => {
     const axiosSecure = useAxiosSecure();
 
     const [dbUser, setDbUser] = useState(null);
-    const [loadingUser, setLoadingUser] = useState(true);
+    const [loadingUser, setLoadingUser] = useState(false);
 
     useEffect(() => {
-        if (!user?.email) {
+        if (!user?.email || !axiosSecure) {
             setDbUser(null);
             setLoadingUser(false);
             return;
         }
 
-        setLoadingUser(true);
+        let cancelled = false;
 
-        axiosSecure
-            .get(`/users/${user.email}`)
-            .then((res) => {
-                setDbUser(res.data || null);
-            })
-            .catch(() => {
-                setDbUser(null);
-            })
-            .finally(() => {
-                setLoadingUser(false);
-            });
-    }, [user?.email, axiosSecure]);
+        const fetchUser = async () => {
+            setLoadingUser(true);
+
+            try {
+                const res = await axiosSecure.get(`/users/${user.email}`);
+                if (!cancelled) {
+                    setDbUser(res.data || null);
+                }
+            } catch (error) {
+                console.error("useUserInfo error:", error);
+                if (!cancelled) {
+                    setDbUser(null);
+                }
+            } finally {
+                if (!cancelled) {
+                    setLoadingUser(false);
+                }
+            }
+        };
+
+        fetchUser();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [user?.email]);
 
     return { dbUser, loadingUser };
 };

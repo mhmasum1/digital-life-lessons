@@ -3,11 +3,12 @@ import { FcGoogle } from "react-icons/fc";
 import useAuth from "../../hooks/useAuth";
 import toast from "react-hot-toast";
 import { TbFidgetSpinner } from "react-icons/tb";
+import useAxiosPublic from "../../hooks/useAxiosPublic";
 
 const Register = () => {
-    const { registerUser, updateUserProfile, signInGoogle, loading } = useAuth()
-
+    const { registerUser, updateUserProfile, signInGoogle, loading } = useAuth();
     const navigate = useNavigate();
+    const axiosPublic = useAxiosPublic();
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -17,34 +18,57 @@ const Register = () => {
         const password = form.password.value;
         const imageUrl = form.image.value;
 
-        try {
-            const result = await registerUser(email, password);
+        const finalPhotoURL =
+            imageUrl || "https://i.ibb.co/7S0qM0M/default-avatar.png";
 
-            await updateUserProfile(
-                name,
-                imageUrl ||
-                "https://i.ibb.co/7S0qM0M/default-avatar.png"
-            );
-            console.log(result);
+        try {
+            // 1) Firebase auth এ user create
+            const result = await registerUser(email, password);
+            const createdUser = result?.user;
+
+            // 2) Firebase profile update
+            await updateUserProfile(name, finalPhotoURL);
+
+            // 3) MongoDB তে user upsert
+            if (createdUser?.email) {
+                await axiosPublic.post("/users", {
+                    email: createdUser.email,
+                    name: name,
+                    photoURL: finalPhotoURL,
+                    isPremium: false,
+                });
+            }
 
             toast.success("Signup Successful");
-
             navigate("/", { replace: true });
         } catch (err) {
             console.log(err);
-            toast.error(err?.message);
+            toast.error(err?.message || "Signup failed");
         }
     };
 
     const handleGoogleSignIn = async () => {
         try {
-            await signInGoogle();
-            toast.success("Signup Successful");
+            const result = await signInGoogle();
+            const loggedUser = result?.user;
 
+            // MongoDB তে user upsert
+            if (loggedUser?.email) {
+                await axiosPublic.post("/users", {
+                    email: loggedUser.email,
+                    name: loggedUser.displayName || "",
+                    photoURL:
+                        loggedUser.photoURL ||
+                        "https://i.ibb.co/7S0qM0M/default-avatar.png",
+                    isPremium: false,
+                });
+            }
+
+            toast.success("Signup Successful");
             navigate("/", { replace: true });
         } catch (err) {
             console.log(err);
-            toast.error(err?.message);
+            toast.error(err?.message || "Google signup failed");
         }
     };
 
@@ -53,7 +77,9 @@ const Register = () => {
             <div className="flex flex-col max-w-md p-6 rounded-md sm:p-10 bg-gray-100 text-gray-900">
                 <div className="mb-8 text-center">
                     <h1 className="my-3 text-4xl font-bold">Sign Up</h1>
-                    <p className="text-sm text-gray-400">Welcome to Digital Life Lessons</p>
+                    <p className="text-sm text-gray-400">
+                        Welcome to Digital Life Lessons
+                    </p>
                 </div>
 
                 <form
