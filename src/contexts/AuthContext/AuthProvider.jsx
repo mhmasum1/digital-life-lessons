@@ -32,9 +32,14 @@ const AuthProvider = ({ children }) => {
         return signInWithPopup(auth, googleProvider);
     };
 
-    const logOut = () => {
+    const logOut = async () => {
         setLoading(true);
-        return signOut(auth);
+        try {
+            await signOut(auth);
+        } finally {
+            localStorage.removeItem("access-token");
+            setLoading(false);
+        }
     };
 
     const updateUserProfile = (name, photoURL) => {
@@ -58,6 +63,11 @@ const AuthProvider = ({ children }) => {
         const unSubscribe = onAuthStateChanged(auth, (currentUser) => {
             setUser(currentUser);
             setLoading(false);
+
+            if (!currentUser) {
+                localStorage.removeItem("access-token");
+            }
+
             console.log("Current user:", currentUser);
         });
 
