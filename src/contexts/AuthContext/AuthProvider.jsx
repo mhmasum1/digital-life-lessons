@@ -10,12 +10,14 @@ import {
 } from "firebase/auth";
 import { auth } from "../../firebase/firebase.init";
 import { AuthContext } from "./AuthContext";
+import useAxiosPublic from "../../hooks/useAxiosPublic";
 
 const googleProvider = new GoogleAuthProvider();
 
 const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const axiosPublic = useAxiosPublic();
 
     const registerUser = (email, password) => {
         setLoading(true);
@@ -32,21 +34,17 @@ const AuthProvider = ({ children }) => {
         return signInWithPopup(auth, googleProvider);
     };
 
-    const logOut = async () => {
+    const logOut = () => {
         setLoading(true);
-        try {
-            await signOut(auth);
-        } finally {
-            localStorage.removeItem("access-token");
-            setLoading(false);
-        }
+        localStorage.removeItem("access-token");
+        return signOut(auth);
     };
 
     const updateUserProfile = (name, photoURL) => {
         setLoading(true);
         return updateProfile(auth.currentUser, {
             displayName: name,
-            photoURL: photoURL,
+            photoURL,
         })
             .then(() => {
                 setUser((prev) => {
@@ -54,27 +52,33 @@ const AuthProvider = ({ children }) => {
                     return { ...prev, displayName: name, photoURL };
                 });
             })
-            .finally(() => {
-                setLoading(false);
-            });
+            .finally(() => setLoading(false));
     };
 
     useEffect(() => {
-        const unSubscribe = onAuthStateChanged(auth, (currentUser) => {
+        const unSubscribe = onAuthStateChanged(auth, async (currentUser) => {
             setUser(currentUser);
-            setLoading(false);
 
-            if (!currentUser) {
+            // ✅ JWT token collect & store
+            try {
+                if (currentUser?.email) {
+                    const res = await axiosPublic.post("/jwt", { email: currentUser.email });
+                    if (res?.data?.token) {
+                        localStorage.setItem("access-token", res.data.token);
+                    }
+                } else {
+                    localStorage.removeItem("access-token");
+                }
+            } catch (err) {
+                console.error("JWT error:", err);
                 localStorage.removeItem("access-token");
+            } finally {
+                setLoading(false);
             }
-
-            console.log("Current user:", currentUser);
         });
 
-        return () => {
-            unSubscribe();
-        };
-    }, []);
+        return () => unSubscribe();
+    }, [axiosPublic]);
 
     const authInfo = {
         user,
@@ -87,11 +91,7 @@ const AuthProvider = ({ children }) => {
         setLoading,
     };
 
-    return (
-        <AuthContext.Provider value={authInfo}>
-            {children}
-        </AuthContext.Provider>
-    );
+    return <AuthContext.Provider value={authInfo}>{children}</AuthContext.Provider>;
 };
 
 export default AuthProvider;
