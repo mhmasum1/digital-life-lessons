@@ -1,26 +1,18 @@
 import { Navigate, useLocation } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
+import useAdmin from "../hooks/useAdmin";
+import Spinner from "../components/common/Spinner";
 
 const AdminRoute = ({ children }) => {
     const { user, loading } = useAuth();
     const location = useLocation();
+    const { isAdmin, adminLoading } = useAdmin();
 
-    if (loading) {
-        return <div className="text-center py-10">Loading...</div>;
-    }
+    if (loading || adminLoading) return <Spinner />;
 
     if (!user) {
-        return (
-            <Navigate
-                to="/auth/login"
-                state={{ from: location }}
-                replace
-            />
-        );
+        return <Navigate to="/auth/login" state={{ from: location }} replace />;
     }
-    const isAdmin =
-        user?.role === "admin" ||
-        user?.email === "admin@example.com";
 
     if (!isAdmin) {
         return <Navigate to="/access-denied" replace />;

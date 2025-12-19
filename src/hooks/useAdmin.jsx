@@ -7,31 +7,35 @@ const useAdmin = () => {
     const axiosSecure = useAxiosSecure();
 
     const [isAdmin, setIsAdmin] = useState(false);
-    const [isAdminLoading, setIsAdminLoading] = useState(true);
+    const [adminLoading, setAdminLoading] = useState(true);
 
     useEffect(() => {
-        const checkAdmin = async () => {
-            if (!user?.email) {
-                setIsAdmin(false);
-                setIsAdminLoading(false);
-                return;
-            }
+        if (loading) return;
+        if (!user?.email) {
+            setIsAdmin(false);
+            setAdminLoading(false);
+            return;
+        }
 
+        let cancelled = false;
+
+        const load = async () => {
             try {
-                setIsAdminLoading(true);
+                setAdminLoading(true);
                 const res = await axiosSecure.get(`/users/admin/${user.email}`);
-                setIsAdmin(!!res.data?.admin);
-            } catch (error) {
-                setIsAdmin(false);
+                if (!cancelled) setIsAdmin(Boolean(res?.data?.admin));
+            } catch (e) {
+                if (!cancelled) setIsAdmin(false);
             } finally {
-                setIsAdminLoading(false);
+                if (!cancelled) setAdminLoading(false);
             }
         };
 
-        if (!loading) checkAdmin();
+        load();
+        return () => (cancelled = true);
     }, [user?.email, loading, axiosSecure]);
 
-    return [isAdmin, isAdminLoading];
+    return { isAdmin, adminLoading };
 };
 
 export default useAdmin;

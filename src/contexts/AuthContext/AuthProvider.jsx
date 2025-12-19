@@ -15,9 +15,10 @@ import useAxiosPublic from "../../hooks/useAxiosPublic";
 const googleProvider = new GoogleAuthProvider();
 
 const AuthProvider = ({ children }) => {
+    const axiosPublic = useAxiosPublic();
+
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    const axiosPublic = useAxiosPublic();
 
     const registerUser = (email, password) => {
         setLoading(true);
@@ -34,23 +35,18 @@ const AuthProvider = ({ children }) => {
         return signInWithPopup(auth, googleProvider);
     };
 
-    const logOut = () => {
+    const logOut = async () => {
         setLoading(true);
+        await signOut(auth);
         localStorage.removeItem("access-token");
-        return signOut(auth);
+        setLoading(false);
     };
 
     const updateUserProfile = (name, photoURL) => {
         setLoading(true);
-        return updateProfile(auth.currentUser, {
-            displayName: name,
-            photoURL,
-        })
+        return updateProfile(auth.currentUser, { displayName: name, photoURL })
             .then(() => {
-                setUser((prev) => {
-                    if (!prev) return prev;
-                    return { ...prev, displayName: name, photoURL };
-                });
+                setUser((prev) => (prev ? { ...prev, displayName: name, photoURL } : prev));
             })
             .finally(() => setLoading(false));
     };
@@ -59,18 +55,18 @@ const AuthProvider = ({ children }) => {
         const unSubscribe = onAuthStateChanged(auth, async (currentUser) => {
             setUser(currentUser);
 
-            // ✅ JWT token collect & store
             try {
                 if (currentUser?.email) {
-                    const res = await axiosPublic.post("/jwt", { email: currentUser.email });
-                    if (res?.data?.token) {
-                        localStorage.setItem("access-token", res.data.token);
+                    //  get jwt token + store
+                    const { data } = await axiosPublic.post("/jwt", { email: currentUser.email });
+                    if (data?.token) {
+                        localStorage.setItem("access-token", data.token);
                     }
                 } else {
                     localStorage.removeItem("access-token");
                 }
             } catch (err) {
-                console.error("JWT error:", err);
+                console.log("JWT error:", err?.response?.data || err?.message);
                 localStorage.removeItem("access-token");
             } finally {
                 setLoading(false);

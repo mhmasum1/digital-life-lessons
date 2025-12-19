@@ -1,57 +1,63 @@
-import { NavLink, Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
+import useAdmin from "../../hooks/useAdmin";
+
+const linkClass = ({ isActive }) =>
+    `block px-3 py-2 rounded ${isActive ? "bg-orange-200 text-orange-900" : "bg-orange-50"
+    }`;
 
 const Sidebar = () => {
-    const linkClass = "block px-3 py-2 rounded hover:bg-orange-100 transition";
-    const activeClass = "bg-orange-200 font-semibold text-orange-800";
+    const { isAdmin, adminLoading } = useAdmin();
+
+    if (adminLoading) return null;
 
     return (
         <div className="p-4 space-y-2">
-            {/* 🔙 Default Home link */}
-            <Link
-                to="/"
-                className="inline-flex items-center gap-2 text-sm text-orange-700 hover:underline mb-3"
-            >
+            <h2 className="text-lg font-semibold mb-4">
+                {isAdmin ? "Admin Dashboard" : "Dashboard Menu"}
+            </h2>
+
+            {/* Common */}
+            <NavLink to="/" className={linkClass}>
                 ← Back to Home
-            </Link>
-
-            <h2 className="text-lg font-semibold mb-4">Dashboard Menu</h2>
-
-            <NavLink
-                to="/dashboard"
-                end
-                className={({ isActive }) =>
-                    `${linkClass} ${isActive ? activeClass : "bg-orange-50"}`
-                }
-            >
-                User Home
             </NavLink>
 
-            <NavLink
-                to="/dashboard/my-lessons"
-                className={({ isActive }) =>
-                    `${linkClass} ${isActive ? activeClass : "bg-orange-50"}`
-                }
-            >
-                My Lessons
-            </NavLink>
+            {!isAdmin ? (
+                <>
+                    <NavLink to="/dashboard" className={linkClass}>
+                        User Home
+                    </NavLink>
 
-            <NavLink
-                to="/dashboard/add-lesson"
-                className={({ isActive }) =>
-                    `${linkClass} ${isActive ? activeClass : "bg-orange-50"}`
-                }
-            >
-                Add Lesson
-            </NavLink>
+                    <NavLink to="/dashboard/my-lessons" className={linkClass}>
+                        My Lessons
+                    </NavLink>
 
-            <NavLink
-                to="/dashboard/my-favorites"
-                className={({ isActive }) =>
-                    `${linkClass} ${isActive ? activeClass : "bg-orange-50"}`
-                }
-            >
-                My Favorites
-            </NavLink>
+                    <NavLink to="/dashboard/add-lesson" className={linkClass}>
+                        Add Lesson
+                    </NavLink>
+
+                    <NavLink to="/dashboard/my-favorites" className={linkClass}>
+                        My Favorites
+                    </NavLink>
+                </>
+            ) : (
+                <>
+                    <NavLink to="/dashboard/admin" className={linkClass}>
+                        Admin Home
+                    </NavLink>
+
+                    <NavLink to="/dashboard/admin/manage-users" className={linkClass}>
+                        Manage Users
+                    </NavLink>
+
+                    <NavLink to="/dashboard/admin/manage-lessons" className={linkClass}>
+                        Manage Lessons
+                    </NavLink>
+
+                    <NavLink to="/dashboard/admin/reported-lessons" className={linkClass}>
+                        Reported Lessons
+                    </NavLink>
+                </>
+            )}
         </div>
     );
 };
