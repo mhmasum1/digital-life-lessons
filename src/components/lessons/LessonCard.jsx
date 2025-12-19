@@ -29,7 +29,7 @@ const LessonCard = ({ lesson, isPremiumUser }) => {
             className={`relative rounded-2xl border border-orange-100 bg-[#FFF7ED] p-5 shadow-sm flex flex-col justify-between ${isLocked ? "overflow-hidden" : ""
                 }`}
         >
-            {/* 🔒 blur overlay for locked premium */}
+            {/*  blur overlay for locked premium */}
             {isLocked && (
                 <div className="absolute inset-0 bg-white/60 backdrop-blur-[3px] z-10 flex flex-col items-center justify-center text-center px-4">
                     <p className="text-sm font-semibold text-amber-800 mb-1">
@@ -49,9 +49,10 @@ const LessonCard = ({ lesson, isPremiumUser }) => {
 
             {/* Card content */}
             <div className={isLocked ? "opacity-40 pointer-events-none" : ""}>
+                {/* Title + badges */}
                 <div className="flex items-start justify-between gap-4 mb-3">
                     <div>
-                        <h2 className="text-base font-semibold text-gray-900 mb-1">
+                        <h2 className="text-base font-semibold text-gray-900 mb-1 line-clamp-2">
                             {lesson?.title}
                         </h2>
                         <p className="text-[11px] uppercase tracking-wide text-gray-400">
@@ -69,10 +70,12 @@ const LessonCard = ({ lesson, isPremiumUser }) => {
                     </span>
                 </div>
 
+                {/* Short description */}
                 <p className="text-sm text-gray-700 mb-3 line-clamp-3">
                     {lesson?.shortDescription}
                 </p>
 
+                {/* Author + meta */}
                 <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
                     <div className="flex items-center gap-2">
                         {lesson?.creatorPhotoURL ? (
@@ -93,15 +96,18 @@ const LessonCard = ({ lesson, isPremiumUser }) => {
                         <span>{lesson?.emotionalTone || "Neutral"}</span>
                         <span>•</span>
                         <span>
-                            {lesson?.createdAt ? new Date(lesson.createdAt).toLocaleDateString() : ""}
+                            {lesson?.createdAt
+                                ? new Date(lesson.createdAt).toLocaleDateString()
+                                : ""}
                         </span>
                     </div>
                 </div>
 
+                {/* Actions */}
                 <div className="flex items-center justify-between">
                     <button
                         onClick={handleSave}
-                        className="text-xs font-semibold border border-gray-200 px-3 py-1.5 rounded-full hover:bg-white transition"
+                        className="text-xs font-semibold text-gray-700 border border-gray-200 px-3 py-1.5 rounded-full hover:bg-white transition"
                     >
                         Save
                     </button>
