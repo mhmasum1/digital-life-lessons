@@ -24,18 +24,12 @@ const LessonDetails = () => {
             try {
                 setLoading(true);
                 const res = await axiosSecure.get(`/lessons/${id}`);
-                if (!cancelled) {
-                    setLesson(res.data || null);
-                }
+                if (!cancelled) setLesson(res.data || null);
             } catch (error) {
                 console.error("GET /lessons/:id error:", error);
-                if (!cancelled) {
-                    setLesson(null);
-                }
+                if (!cancelled) setLesson(null);
             } finally {
-                if (!cancelled) {
-                    setLoading(false);
-                }
+                if (!cancelled) setLoading(false);
             }
         };
 
@@ -65,7 +59,7 @@ const LessonDetails = () => {
     const {
         title,
         shortDescription,
-        fullStory,
+        details,
         category,
         emotionalTone,
         accessLevel,
@@ -75,6 +69,12 @@ const LessonDetails = () => {
     } = lesson;
 
     const isPremiumLesson = accessLevel === "premium";
+
+    const detailsText = (details || "").trim();
+
+    const formattedDate = createdAt
+        ? new Date(createdAt).toLocaleDateString()
+        : "Recently shared";
 
     return (
         <div className="bg-[#FFF7ED] min-h-screen py-10 px-4">
@@ -108,17 +108,18 @@ const LessonDetails = () => {
 
                 {/* Main card */}
                 <article className="bg-white rounded-2xl shadow-sm border border-orange-100 p-6 md:p-8">
-                    {/* Title + date */}
+                    {/* Title + author */}
                     <header className="mb-6">
                         <h1 className="text-2xl md:text-3xl font-semibold text-gray-900 mb-2">
                             {title}
                         </h1>
+
                         <div className="flex items-center justify-between text-xs text-gray-500">
                             <div className="flex items-center gap-2">
                                 {creatorPhotoURL ? (
                                     <img
                                         src={creatorPhotoURL}
-                                        alt={creatorName}
+                                        alt={creatorName || "User"}
                                         className="h-7 w-7 rounded-full object-cover"
                                     />
                                 ) : (
@@ -126,28 +127,26 @@ const LessonDetails = () => {
                                         {(creatorName?.[0] || "U").toUpperCase()}
                                     </div>
                                 )}
+
                                 <div className="flex flex-col leading-tight">
                                     <span className="text-xs font-medium text-gray-800">
                                         {creatorName || "Anonymous"}
                                     </span>
                                     <span className="text-[11px] text-gray-500">
-                                        {createdAt
-                                            ? new Date(createdAt).toLocaleDateString()
-                                            : "Recently shared"}
+                                        {formattedDate}
                                     </span>
                                 </div>
                             </div>
                         </div>
                     </header>
 
-                    {/* Short description */}
+                    {/* Short description highlight */}
                     {shortDescription && (
-                        <p className="text-sm text-gray-700 bg-orange-50 border border-orange-100 rounded-xl px-4 py-3 mb-6">
+                        <div className="bg-orange-50 border border-orange-100 rounded-xl px-4 py-3 mb-6 text-sm text-gray-700">
                             {shortDescription}
-                        </p>
+                        </div>
                     )}
 
-                    {/* Premium lock for non-premium users */}
                     {isPremiumLesson && !isPremiumUser ? (
                         <div className="mt-4 border border-dashed border-amber-300 bg-amber-50/60 rounded-xl px-4 py-5 text-center">
                             <p className="text-sm font-medium text-amber-800 mb-2">
@@ -165,19 +164,22 @@ const LessonDetails = () => {
                             </Link>
                         </div>
                     ) : (
-                        // Full story for free lessons OR premium user
-                        <section className="prose prose-sm md:prose-base max-w-none text-gray-800 leading-relaxed">
-                            {fullStory ? (
-                                fullStory.split("\n").map((para, idx) => (
-                                    <p key={idx} className="mb-3">
-                                        {para}
-                                    </p>
-                                ))
+                        <section className="mt-2">
+                            {detailsText ? (
+                                <div className="prose prose-sm md:prose-base max-w-none text-gray-800 leading-relaxed">
+                                    {detailsText.split("\n").map((para, idx) => (
+                                        <p key={idx} className="mb-3">
+                                            {para}
+                                        </p>
+                                    ))}
+                                </div>
                             ) : (
-                                <p>
-                                    No detailed story was provided for this lesson, but the short
-                                    description above summarizes the key insight.
-                                </p>
+                                <div className="rounded-xl border border-gray-200 bg-white px-4 py-4 text-sm text-gray-600">
+                                    <span className="font-medium text-gray-800">
+                                        No full story added.
+                                    </span>{" "}
+                                    This lesson is shared as a short insight only.
+                                </div>
                             )}
                         </section>
                     )}
