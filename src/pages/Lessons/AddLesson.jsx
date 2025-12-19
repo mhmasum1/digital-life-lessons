@@ -1,6 +1,6 @@
-
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import useAuth from "../../hooks/useAuth";
 import useUserInfo from "../../hooks/useUserInfo";
 import useAxiosSecure from "../../hooks/useAxiosSecure";
@@ -14,7 +14,6 @@ const AddLesson = () => {
     const [submitting, setSubmitting] = useState(false);
 
     if (!user?.email) {
-        // যদি চাই, এখানে Navigate দিয়ে login এ পাঠাতে পারো
         return <Navigate to="/auth/login" replace />;
     }
 
@@ -25,16 +24,16 @@ const AddLesson = () => {
         const form = e.target;
 
         const lessonData = {
-            title: form.title.value,
-            shortDescription: form.shortDescription.value,
-            description: form.description.value,
+            title: form.title.value.trim(),
+            shortDescription: form.shortDescription.value.trim(),
+            details: form.details.value.trim(),
             category: form.category.value,
             emotionalTone: form.emotionalTone.value,
-            accessLevel: form.accessLevel.value, // "free" / "premium"
-            visibility: form.visibility.value, // "public" / "private"
+            accessLevel: form.accessLevel.value,
+            visibility: form.visibility.value,
 
             creatorEmail: user.email,
-            creatorName: user.displayName || dbUser?.name || "",
+            creatorName: user.displayName || dbUser?.name || "Anonymous",
             creatorPhotoURL: user.photoURL || dbUser?.photoURL || "",
         };
 
@@ -43,16 +42,15 @@ const AddLesson = () => {
             const res = await axiosSecure.post("/lessons", lessonData);
 
             if (res.data?.insertedId) {
-                // success
-                alert("Lesson added successfully!");
+                toast.success("Lesson added successfully!");
                 form.reset();
-                navigate("/lessons"); // বা "/my-lessons" যেটা route আছে
+                navigate("/lessons", { replace: true });
             } else {
-                alert("Something went wrong. Please try again.");
+                toast.error("Something went wrong. Please try again.");
             }
         } catch (err) {
             console.error("Add lesson error:", err);
-            alert("Failed to save lesson.");
+            toast.error("Failed to save lesson.");
         } finally {
             setSubmitting(false);
         }
@@ -100,20 +98,19 @@ const AddLesson = () => {
                     ></textarea>
                 </div>
 
-                {/* Full Description */}
+                {/* Full Details */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                         Full story / lesson details
                     </label>
                     <textarea
-                        name="description"
+                        name="details"
                         rows={5}
                         className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/60 focus:border-primary"
                         placeholder="Write the full lesson, what happened, what you felt and what you learned."
                     ></textarea>
                 </div>
 
-                {/* Category + Emotional tone */}
                 <div className="grid md:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
