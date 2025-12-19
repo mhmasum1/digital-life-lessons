@@ -4,16 +4,27 @@ import useAuth from "../../hooks/useAuth";
 import { FcGoogle } from "react-icons/fc";
 import { TbFidgetSpinner } from "react-icons/tb";
 import Spinner from "../../components/common/Spinner";
+import useAxiosPublic from "../../hooks/useAxiosPublic";
 
 const Login = () => {
     const { signInUser, signInGoogle, loading, user, setLoading } = useAuth();
     const navigate = useNavigate();
-
+    const axiosPublic = useAxiosPublic();
 
     if (loading) return <Spinner />;
-
     if (user) return <Navigate to="/" replace={true} />;
 
+    // ✅ helper: get JWT + store
+    const getAndStoreToken = async (email) => {
+        const res = await axiosPublic.post("/jwt", { email });
+        const token = res?.data?.token;
+        if (token) {
+            localStorage.setItem("access-token", token);
+        }
+        return token;
+    };
+
+    // ---------- Email / Password Login ----------
     const handleSubmit = async (event) => {
         event.preventDefault();
         const form = event.target;
@@ -21,28 +32,60 @@ const Login = () => {
         const password = form.password.value;
 
         try {
-            await signInUser(email, password);
+            setLoading(true);
 
-            toast.success("Login Successful");
+            const result = await signInUser(email, password);
+            const loggedUser = result?.user;
 
+            if (loggedUser?.email) {
+                // 1) upsert user
+                await axiosPublic.post("/users", {
+                    email: loggedUser.email,
+                    name: loggedUser.displayName || "",
+                    photoURL: loggedUser.photoURL || "",
+                });
+
+                // 2) get JWT + store
+                await getAndStoreToken(loggedUser.email);
+            }
+
+            toast.success("Login successful");
             navigate("/", { replace: true });
         } catch (err) {
-            console.log(err);
-            toast.error(err?.message);
+            console.error(err);
+            toast.error(err?.message || "Login failed");
+        } finally {
+            setLoading(false);
         }
     };
 
+    // ---------- Google Login ----------
     const handleGoogleSignIn = async () => {
         try {
-            await signInGoogle();
+            setLoading(true);
 
-            toast.success("Login Successful");
+            const result = await signInGoogle();
+            const loggedUser = result?.user;
 
+            if (loggedUser?.email) {
+                // 1) upsert user
+                await axiosPublic.post("/users", {
+                    email: loggedUser.email,
+                    name: loggedUser.displayName || "",
+                    photoURL: loggedUser.photoURL || "",
+                });
+
+                // 2) get JWT + store
+                await getAndStoreToken(loggedUser.email);
+            }
+
+            toast.success("Login successful");
             navigate("/", { replace: true });
         } catch (err) {
-            console.log(err);
+            console.error(err);
+            toast.error(err?.message || "Google login failed");
+        } finally {
             setLoading(false);
-            toast.error(err?.message);
         }
     };
 
