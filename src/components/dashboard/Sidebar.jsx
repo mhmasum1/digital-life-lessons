@@ -6,10 +6,10 @@ const Sidebar = () => {
 
     return (
         <div className="p-4 space-y-2">
-
+            {/* 🔙 Default Home link */}
             <Link
                 to="/"
-                className="inline-flex items-center gap-2 text-sm text-orange-700 hover:underline mb-2"
+                className="inline-flex items-center gap-2 text-sm text-orange-700 hover:underline mb-3"
             >
                 ← Back to Home
             </Link>

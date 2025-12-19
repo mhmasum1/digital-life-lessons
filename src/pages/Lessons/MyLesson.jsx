@@ -1,155 +1,242 @@
 import { useEffect, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 import useAuth from "../../hooks/useAuth";
 import useAxiosSecure from "../../hooks/useAxiosSecure";
+import useUserInfo from "../../hooks/useUserInfo";
 import Spinner from "../../components/common/Spinner";
 
 const MyLesson = () => {
     const { user } = useAuth();
+    const { dbUser } = useUserInfo(); // premium check
     const axiosSecure = useAxiosSecure();
 
-    const [lessons, setLessons] = useState([]);
+    const isPremiumUser = dbUser?.isPremium === true;
+
     const [loading, setLoading] = useState(true);
+    const [lessons, setLessons] = useState([]);
+    const [rowLoading, setRowLoading] = useState({}); // { [lessonId]: true }
 
-    // 👇 Hook সবসময় top-level এ
-    useEffect(() => {
-        let cancelled = false;
-
-        // axiosSecure বা user এখনো ready না থাকলে কিছুই করব না
-        if (!user?.email || !axiosSecure) {
-            setLessons([]);
+    const fetchMyLessons = async () => {
+        try {
+            setLoading(true);
+            const res = await axiosSecure.get(`/lessons/my?email=${user?.email}`);
+            setLessons(Array.isArray(res.data) ? res.data : []);
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to load your lessons");
+        } finally {
             setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!user?.email) return;
+        fetchMyLessons();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.email]);
+
+    const setThisRowLoading = (lessonId, value) => {
+        setRowLoading((prev) => ({ ...prev, [lessonId]: value }));
+    };
+
+    // ---------- Delete ----------
+    const handleDelete = async (lessonId) => {
+        const ok = window.confirm("Are you sure you want to delete this lesson?");
+        if (!ok) return;
+
+        try {
+            setThisRowLoading(lessonId, true);
+            await axiosSecure.delete(`/lessons/my/${lessonId}`);
+            setLessons((prev) => prev.filter((l) => l._id !== lessonId));
+            toast.success("Lesson deleted");
+        } catch (err) {
+            console.error(err);
+            toast.error(err?.response?.data?.message || "Delete failed");
+        } finally {
+            setThisRowLoading(lessonId, false);
+        }
+    };
+
+    // ---------- Update visibility ----------
+    const handleVisibilityChange = async (lessonId, nextValue) => {
+        // optimistic update
+        const prevLessons = lessons;
+        setLessons((prev) =>
+            prev.map((l) => (l._id === lessonId ? { ...l, visibility: nextValue } : l))
+        );
+
+        try {
+            setThisRowLoading(lessonId, true);
+            await axiosSecure.patch(`/lessons/${lessonId}`, { visibility: nextValue });
+            toast.success("Visibility updated");
+        } catch (err) {
+            console.error(err);
+            // rollback
+            setLessons(prevLessons);
+            toast.error(err?.response?.data?.message || "Failed to update visibility");
+        } finally {
+            setThisRowLoading(lessonId, false);
+        }
+    };
+
+    // ---------- Update access level ----------
+    const handleAccessChange = async (lessonId, nextValue) => {
+        if (!isPremiumUser) {
+            toast.error("Upgrade to Premium to create Premium lessons");
             return;
         }
 
-        const fetchMyLessons = async () => {
-            try {
-                setLoading(true);
-                // তোমার backend রুট যদি অন্যরকম হয়, শুধু নিচের URL টা বদলে নিও
-                const res = await axiosSecure.get(`/lessons/user/${user.email}`);
-                const data = res.data;
+        const prevLessons = lessons;
+        setLessons((prev) =>
+            prev.map((l) => (l._id === lessonId ? { ...l, accessLevel: nextValue } : l))
+        );
 
-                const list = Array.isArray(data)
-                    ? data
-                    : Array.isArray(data?.lessons)
-                        ? data.lessons
-                        : [];
-
-                if (!cancelled) setLessons(list);
-            } catch (error) {
-                console.error("GET /lessons/user/:email error:", error);
-                if (!cancelled) setLessons([]);
-            } finally {
-                if (!cancelled) setLoading(false);
-            }
-        };
-
-        fetchMyLessons();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [axiosSecure, user?.email]);
-
-    // 🔒 User না থাকলে – login page এ পাঠিয়ে দেই
-    if (!user?.email && !loading) {
-        return <Navigate to="/auth/login" replace />;
-    }
+        try {
+            setThisRowLoading(lessonId, true);
+            await axiosSecure.patch(`/lessons/${lessonId}`, { accessLevel: nextValue });
+            toast.success("Access level updated");
+        } catch (err) {
+            console.error(err);
+            setLessons(prevLessons);
+            toast.error(err?.response?.data?.message || "Failed to update access level");
+        } finally {
+            setThisRowLoading(lessonId, false);
+        }
+    };
 
     if (loading) return <Spinner />;
 
     return (
-        <div className="bg-[#FFF7ED] min-h-screen py-8 px-4">
-            <div className="max-w-5xl mx-auto">
-                <div className="flex items-center justify-between mb-6">
-                    <div>
-                        <h1 className="text-2xl font-semibold text-gray-900">
-                            My Life Lessons
-                        </h1>
-                        <p className="text-sm text-gray-600">
-                            All the lessons you have shared with the community.
-                        </p>
-                    </div>
+        <div className="p-6">
+            <div className="flex items-center justify-between mb-6">
+                <h1 className="text-2xl font-semibold">My Lessons</h1>
+                <Link
+                    to="/dashboard/add-lesson"
+                    className="text-sm font-semibold px-4 py-2 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition"
+                >
+                    + Add Lesson
+                </Link>
+            </div>
+
+            {lessons.length === 0 ? (
+                <div className="border border-orange-100 bg-[#FFF7ED] rounded-2xl p-8 text-center">
+                    <p className="text-gray-800 font-medium mb-2">No lessons yet.</p>
+                    <p className="text-sm text-gray-600 mb-4">
+                        Create your first life lesson from “Add Lesson”.
+                    </p>
                     <Link
                         to="/dashboard/add-lesson"
                         className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 transition"
                     >
-                        + Share a new lesson
+                        Create a lesson →
                     </Link>
                 </div>
+            ) : (
+                <div className="overflow-x-auto border rounded-xl">
+                    <table className="min-w-full text-sm">
+                        <thead className="bg-orange-50 text-gray-700">
+                            <tr>
+                                <th className="text-left p-3">Title</th>
+                                <th className="text-left p-3">Category</th>
+                                <th className="text-left p-3">Access</th>
+                                <th className="text-left p-3">Visibility</th>
+                                <th className="text-left p-3">Saved</th>
+                                <th className="text-left p-3">Created</th>
+                                <th className="text-right p-3">Actions</th>
+                            </tr>
+                        </thead>
 
-                {lessons.length === 0 ? (
-                    <div className="mt-10 text-center">
-                        <p className="text-sm text-gray-600 mb-3">
-                            You haven&apos;t shared any lessons yet.
-                        </p>
-                        <Link
-                            to="/dashboard/add-lesson"
-                            className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 transition"
-                        >
-                            Share your first lesson →
-                        </Link>
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                        {lessons.map((lesson) => {
-                            const isPremiumLesson = lesson.accessLevel === "premium";
+                        <tbody>
+                            {lessons.map((lesson) => {
+                                const busy = !!rowLoading[lesson._id];
 
-                            return (
-                                <div
-                                    key={lesson._id}
-                                    className="bg-white rounded-xl border border-orange-100 p-4 md:p-5 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4"
-                                >
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <h2 className="text-base font-semibold text-gray-900">
-                                                {lesson.title}
-                                            </h2>
-                                            <span
-                                                className={`px-2 py-0.5 rounded-full text-[11px] border ${isPremiumLesson
-                                                        ? "bg-amber-50 text-amber-700 border-amber-200"
-                                                        : "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                                    }`}
+                                return (
+                                    <tr key={lesson._id} className="border-t">
+                                        <td className="p-3 font-medium text-gray-900">
+                                            {lesson.title}
+                                            {busy && (
+                                                <span className="ml-2 text-[11px] text-gray-400">
+                                                    saving...
+                                                </span>
+                                            )}
+                                        </td>
+
+                                        <td className="p-3">{lesson.category || "-"}</td>
+
+                                        {/* Access dropdown */}
+                                        <td className="p-3">
+                                            <select
+                                                className="border rounded-md px-2 py-1 text-xs bg-white"
+                                                value={lesson.accessLevel || "free"}
+                                                disabled={!isPremiumUser || busy}
+                                                title={
+                                                    !isPremiumUser
+                                                        ? "Upgrade to Premium to set Premium access"
+                                                        : ""
+                                                }
+                                                onChange={(e) =>
+                                                    handleAccessChange(lesson._id, e.target.value)
+                                                }
                                             >
-                                                {isPremiumLesson ? "Premium" : "Free"}
-                                            </span>
-                                        </div>
-                                        <p className="text-xs text-gray-500 mb-1">
-                                            #{lesson.category || "LifeLesson"} •{" "}
-                                            {lesson.emotionalTone || "Neutral"}
-                                        </p>
-                                        <p className="text-sm text-gray-700 line-clamp-2">
-                                            {lesson.shortDescription}
-                                        </p>
-                                        <p className="text-[11px] text-gray-400 mt-1">
-                                            Shared on{" "}
+                                                <option value="free">free</option>
+                                                <option value="premium">premium</option>
+                                            </select>
+                                        </td>
+
+                                        {/* Visibility dropdown */}
+                                        <td className="p-3">
+                                            <select
+                                                className="border rounded-md px-2 py-1 text-xs bg-white"
+                                                value={lesson.visibility || "public"}
+                                                disabled={busy}
+                                                onChange={(e) =>
+                                                    handleVisibilityChange(lesson._id, e.target.value)
+                                                }
+                                            >
+                                                <option value="public">public</option>
+                                                <option value="private">private</option>
+                                            </select>
+                                        </td>
+
+                                        <td className="p-3">{lesson.savedCount ?? 0}</td>
+
+                                        <td className="p-3">
                                             {lesson.createdAt
                                                 ? new Date(lesson.createdAt).toLocaleDateString()
-                                                : "recently"}
-                                        </p>
-                                    </div>
+                                                : ""}
+                                        </td>
 
-                                    <div className="flex flex-col items-end gap-2 min-w-[150px]">
-                                        <Link
-                                            to={`/lessons/${lesson._id}`}
-                                            className="text-xs font-semibold text-orange-600 border border-orange-200 px-3 py-1.5 rounded-full hover:bg-orange-50 transition w-full text-center"
-                                        >
-                                            View details
-                                        </Link>
+                                        <td className="p-3 text-right space-x-2">
+                                            <Link
+                                                to={`/lessons/${lesson._id}`}
+                                                className="px-3 py-1.5 rounded-full border text-xs font-semibold hover:bg-gray-50"
+                                            >
+                                                Details
+                                            </Link>
 
-                                        <Link
-                                            to={`/dashboard/update-lesson/${lesson._id}`}
-                                            className="text-xs font-semibold text-gray-700 border border-gray-200 px-3 py-1.5 rounded-full hover:bg-gray-50 transition w-full text-center"
-                                        >
-                                            Edit lesson
-                                        </Link>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-            </div>
+                                            <Link
+                                                to={`/dashboard/update-lesson/${lesson._id}`}
+                                                className="px-3 py-1.5 rounded-full border text-xs font-semibold hover:bg-gray-50"
+                                            >
+                                                Update
+                                            </Link>
+
+                                            <button
+                                                disabled={busy}
+                                                onClick={() => handleDelete(lesson._id)}
+                                                className="px-3 py-1.5 rounded-full border text-xs font-semibold hover:bg-red-50 text-red-600 border-red-200 disabled:opacity-60"
+                                            >
+                                                Delete
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            )}
         </div>
     );
 };
