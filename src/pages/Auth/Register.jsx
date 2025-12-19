@@ -6,9 +6,25 @@ import { TbFidgetSpinner } from "react-icons/tb";
 import useAxiosPublic from "../../hooks/useAxiosPublic";
 
 const Register = () => {
-    const { registerUser, updateUserProfile, signInGoogle, loading } = useAuth();
+    const {
+        registerUser,
+        updateUserProfile,
+        signInGoogle,
+        loading,
+        setLoading,
+    } = useAuth();
+
     const navigate = useNavigate();
     const axiosPublic = useAxiosPublic();
+
+    const getAndStoreToken = async (email) => {
+        const res = await axiosPublic.post("/jwt", { email });
+        const token = res?.data?.token;
+        if (token) {
+            localStorage.setItem("access-token", token);
+        }
+        return token;
+    };
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -22,14 +38,13 @@ const Register = () => {
             imageUrl || "https://i.ibb.co/7S0qM0M/default-avatar.png";
 
         try {
-            // 1) Firebase auth এ user create
+            if (setLoading) setLoading(true);
+
             const result = await registerUser(email, password);
             const createdUser = result?.user;
 
-            // 2) Firebase profile update
             await updateUserProfile(name, finalPhotoURL);
 
-            // 3) MongoDB তে user upsert
             if (createdUser?.email) {
                 await axiosPublic.post("/users", {
                     email: createdUser.email,
@@ -37,6 +52,8 @@ const Register = () => {
                     photoURL: finalPhotoURL,
                     isPremium: false,
                 });
+
+                await getAndStoreToken(createdUser.email);
             }
 
             toast.success("Signup Successful");
@@ -44,15 +61,18 @@ const Register = () => {
         } catch (err) {
             console.log(err);
             toast.error(err?.message || "Signup failed");
+        } finally {
+            if (setLoading) setLoading(false);
         }
     };
 
     const handleGoogleSignIn = async () => {
         try {
+            if (setLoading) setLoading(true);
+
             const result = await signInGoogle();
             const loggedUser = result?.user;
 
-            // MongoDB তে user upsert
             if (loggedUser?.email) {
                 await axiosPublic.post("/users", {
                     email: loggedUser.email,
@@ -62,6 +82,9 @@ const Register = () => {
                         "https://i.ibb.co/7S0qM0M/default-avatar.png",
                     isPremium: false,
                 });
+
+                // ✅ get JWT + store
+                await getAndStoreToken(loggedUser.email);
             }
 
             toast.success("Signup Successful");
@@ -69,6 +92,8 @@ const Register = () => {
         } catch (err) {
             console.log(err);
             toast.error(err?.message || "Google signup failed");
+        } finally {
+            if (setLoading) setLoading(false);
         }
     };
 
