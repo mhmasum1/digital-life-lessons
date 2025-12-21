@@ -85,38 +85,43 @@ const router = createBrowserRouter([
             { path: "update-lesson/:id", element: <UpdateLesson /> },
             { path: "my-favorites", element: <MyFavorites /> },
 
-            // admin side
+
             {
                 path: "admin",
-                element: (
-                    <AdminRoute>
-                        <AdminHome />
-                    </AdminRoute>
-                ),
-            },
-            {
-                path: "manage-users",
-                element: (
-                    <AdminRoute>
-                        <ManageUsers />
-                    </AdminRoute>
-                ),
-            },
-            {
-                path: "manage-lessons",
-                element: (
-                    <AdminRoute>
-                        <ManageLessons />
-                    </AdminRoute>
-                ),
-            },
-            {
-                path: "reported-lessons",
-                element: (
-                    <AdminRoute>
-                        <ReportedLessons />
-                    </AdminRoute>
-                ),
+                children: [
+                    {
+                        index: true,
+                        element: (
+                            <AdminRoute>
+                                <AdminHome />
+                            </AdminRoute>
+                        ),
+                    },
+                    {
+                        path: "manage-users",
+                        element: (
+                            <AdminRoute>
+                                <ManageUsers />
+                            </AdminRoute>
+                        ),
+                    },
+                    {
+                        path: "manage-lessons",
+                        element: (
+                            <AdminRoute>
+                                <ManageLessons />
+                            </AdminRoute>
+                        ),
+                    },
+                    {
+                        path: "reported-lessons",
+                        element: (
+                            <AdminRoute>
+                                <ReportedLessons />
+                            </AdminRoute>
+                        ),
+                    },
+                ],
             },
         ],
     },
