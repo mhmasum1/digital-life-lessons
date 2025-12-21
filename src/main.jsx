@@ -10,7 +10,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <AuthProvider>
       <RouterProvider router={router} />
-      {/* ✅ GLOBAL TOASTER */}
+
       <Toaster position="top-right" />
     </AuthProvider>
   </React.StrictMode>
