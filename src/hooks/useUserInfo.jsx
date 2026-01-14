@@ -3,49 +3,53 @@ import useAuth from "./useAuth";
 import useAxiosSecure from "./useAxiosSecure";
 
 const useUserInfo = () => {
-    const { user } = useAuth();
-    const axiosSecure = useAxiosSecure();
+  const { user, loading } = useAuth();
+  const axiosSecure = useAxiosSecure();
 
-    const [dbUser, setDbUser] = useState(null);
-    const [loadingUser, setLoadingUser] = useState(false);
+  const [dbUser, setDbUser] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(true);
 
-    useEffect(() => {
-        if (!user?.email || !axiosSecure) {
-            setDbUser(null);
-            setLoadingUser(false);
-            return;
-        }
+  useEffect(() => {
+    if (loading) return;
 
-        let cancelled = false;
+    if (!user?.email) {
+      setDbUser(null);
+      setLoadingUser(false);
+      return;
+    }
 
-        const fetchUser = async () => {
-            setLoadingUser(true);
+    const token = localStorage.getItem("access-token");
+    if (!token) {
+      setDbUser(null);
+      setLoadingUser(false);
+      return;
+    }
 
-            try {
-                const res = await axiosSecure.get(`/users/${user.email}`);
-                if (!cancelled) {
-                    setDbUser(res.data || null);
-                }
-            } catch (error) {
-                console.error("useUserInfo error:", error);
-                if (!cancelled) {
-                    setDbUser(null);
-                }
-            } finally {
-                if (!cancelled) {
-                    setLoadingUser(false);
-                }
-            }
-        };
+    let cancelled = false;
 
-        fetchUser();
+    const fetchUser = async () => {
+      setLoadingUser(true);
+      try {
+        const res = await axiosSecure.get(`/users/${user.email}`);
+        if (!cancelled) setDbUser(res.data || null);
+      } catch (error) {
+        console.error("useUserInfo error:", error?.response?.data || error?.message);
+        if (!cancelled) setDbUser(null);
+      } finally {
+        if (!cancelled) setLoadingUser(false);
+      }
+    };
 
-        return () => {
-            cancelled = true;
-        };
-    }, [user?.email]);
+    fetchUser();
 
-    return { dbUser, loadingUser };
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.email, loading, axiosSecure]);
+
+  const isPremium = dbUser?.isPremium === true;
+
+  return { dbUser, loadingUser, isPremium };
 };
 
 export default useUserInfo;
