@@ -31,6 +31,7 @@ import AdminHome from "../pages/Dashborad/AdminHome";
 import ManageUsers from "../pages/Dashborad/ManageUsers";
 import ManageLessons from "../pages/Dashborad/ManageLessons";
 import ReportedLessons from "../pages/Dashborad/ReportedLessons";
+import Profile from "../pages/Dashborad/Profile";
 
 const router = createBrowserRouter([
     // ---------- Public / main layout ----------
@@ -80,6 +81,7 @@ const router = createBrowserRouter([
         children: [
             // user side
             { index: true, element: <UserHome /> },
+            { path: "profile", element: <Profile /> },
             { path: "add-lesson", element: <AddLesson /> },
             { path: "my-lessons", element: <MyLesson /> },
             { path: "update-lesson/:id", element: <UpdateLesson /> },
