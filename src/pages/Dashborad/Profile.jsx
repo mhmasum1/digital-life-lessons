@@ -69,9 +69,6 @@ const Profile = () => {
               {isPremium && <span className="ml-2 text-amber-600">⭐ Premium</span>}
             </h1>
             <p className="text-sm text-gray-600">{user?.email}</p>
-            <p className="text-xs text-gray-500 mt-1">
-              Email edit disabled (Firebase security).
-            </p>
           </div>
         </div>
 
