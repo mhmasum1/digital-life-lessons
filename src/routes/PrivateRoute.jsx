@@ -2,27 +2,33 @@ import { Navigate, useLocation } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 
 const PrivateRoute = ({ children }) => {
-    const { user, loading } = useAuth();
-    const location = useLocation();
+  const { user, loading } = useAuth();
+  const location = useLocation();
 
-    // loading state
-    if (loading) {
-        return <div className="text-center py-10">Loading...</div>;
-    }
+  const token = localStorage.getItem("access-token");
 
-    // if user NOT logged in → go to login
-    if (!user?.email) {
-        return (
-            <Navigate
-                to="/auth/login"
-                state={{ from: location }}
-                replace
-            />
-        );
-    }
+  if (loading) {
+    return <div className="text-center py-10">Loading...</div>;
+  }
 
-    // user logged in → allow
-    return children;
+  if (user?.email && !token) {
+    return (
+      <div className="text-center py-10">
+        <p>Preparing your session...</p>
+        <p className="text-xs text-gray-500 mt-2">
+          Server may take a few seconds to wake up.
+        </p>
+      </div>
+    );
+  }
+
+  if (!user?.email) {
+    return (
+      <Navigate to="/auth/login" state={{ from: location }} replace />
+    );
+  }
+
+  return children;
 };
 
 export default PrivateRoute;
