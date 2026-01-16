@@ -4,21 +4,21 @@ import useAdmin from "../hooks/useAdmin";
 import Spinner from "../components/common/Spinner";
 
 const AdminRoute = ({ children }) => {
-    const { user, loading } = useAuth();
-    const location = useLocation();
-    const { isAdmin, adminLoading } = useAdmin();
+  const { user, loading } = useAuth();
+  const location = useLocation();
+  const { isAdmin, adminLoading } = useAdmin();
 
-    if (loading || adminLoading) return <Spinner />;
+  if (loading || adminLoading) return <Spinner />;
 
-    if (!user) {
-        return <Navigate to="/auth/login" state={{ from: location }} replace />;
-    }
+  if (!user) {
+    return <Navigate to="/auth/login" state={{ from: location }} replace />;
+  }
 
-    if (!isAdmin) {
-        return <Navigate to="/access-denied" replace />;
-    }
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" replace />; 
+  }
 
-    return children;
+  return children; 
 };
 
 export default AdminRoute;

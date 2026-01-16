@@ -85,11 +85,11 @@ const AuthProvider = ({ children }) => {
         const token = await getJwtWithRetry(currentUser.email);
 
         if (token) {
-          localStorage.setItem("access-token", token);
-        } else {
-         
-          console.log("JWT not received yet (server cold start). Keeping existing token.");
-        }
+  localStorage.setItem("access-token", token);
+} else {
+  localStorage.removeItem("access-token");
+}
+
       } catch (err) {
         console.log("Auth/JWT error:", err?.response?.data || err?.message);
       } finally {
