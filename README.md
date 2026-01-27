@@ -9,7 +9,7 @@ Digital Life Lessons is a full-stack web application where users can create, pre
 👉 https://github.com/mhmasum1/digital-life-lessons
 
 🔗 Server Repository:
-👉 https://github.com/mhmasum1/digital-life-lessons-server
+👉 https://digital-life-lessons-server-yneq.vercel.app
 
 🚀 Project Features
 
